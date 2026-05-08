@@ -12,8 +12,9 @@ type CodeGenerator interface {
 
 type LinkRepository interface {
 	CreateIfNotExists(context.Context, *link.Link, string) error
-	CountByIP(ctx context.Context, ip string) (int, error)
+	CountByIPAndIncrement(ctx context.Context, ip string) (int, error)
 	GetByCode(ctx context.Context, code string) (*link.Link, error)
+	DecrementIPCounter(ctx context.Context, ip string) error
 }
 type Service struct {
 	codeGen  CodeGenerator

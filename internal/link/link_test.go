@@ -15,14 +15,20 @@ func TestCanCreate(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:    "valid request",
+			name:    "valid https request",
 			url:     "https://google.com",
 			ipCount: 5,
 			wantErr: nil,
 		},
 		{
+			name:    "valid http request",
+			url:     "http://localhost:8080/test",
+			ipCount: 0,
+			wantErr: nil,
+		},
+		{
 			name:    "url too long",
-			url:     strings.Repeat("a", 201),
+			url:     "https://" + strings.Repeat("a", 201),
 			ipCount: 0,
 			wantErr: link.ErrTooLongURL,
 		},
@@ -33,10 +39,34 @@ func TestCanCreate(t *testing.T) {
 			wantErr: link.ErrTooManyActiveURLs,
 		},
 		{
-			name:    "ip limit exceeded",
-			url:     "https://google.com",
-			ipCount: 11,
-			wantErr: link.ErrTooManyActiveURLs,
+			name:    "missing protocol",
+			url:     "google.com",
+			ipCount: 0,
+			wantErr: link.ErrInvalidURL,
+		},
+		{
+			name:    "invalid protocol (ftp)",
+			url:     "ftp://files.com",
+			ipCount: 0,
+			wantErr: link.ErrInvalidURL,
+		},
+		{
+			name:    "malicious protocol (javascript)",
+			url:     "javascript:alert(1)",
+			ipCount: 0,
+			wantErr: link.ErrInvalidURL,
+		},
+		{
+			name:    "empty string",
+			url:     "",
+			ipCount: 0,
+			wantErr: link.ErrInvalidURL,
+		},
+		{
+			name:    "garbage string",
+			url:     "this is not a url",
+			ipCount: 0,
+			wantErr: link.ErrInvalidURL,
 		},
 	}
 
@@ -44,7 +74,7 @@ func TestCanCreate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := link.CanCreate(tt.url, tt.ipCount)
 			if err != tt.wantErr {
-				t.Errorf("CanCreate() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CanCreate() for %s: error = %v, wantErr %v", tt.name, err, tt.wantErr)
 			}
 		})
 	}

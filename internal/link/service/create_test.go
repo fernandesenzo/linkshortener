@@ -13,49 +13,6 @@ import (
 	"github.com/fernandesenzo/linkshortener/internal/link/service"
 )
 
-type MockCodeGenerator struct {
-	codes []string
-	err   error
-	index int
-}
-
-func (m *MockCodeGenerator) Generate(len int) (string, error) {
-	if m.err != nil {
-		return "", m.err
-	}
-	code := m.codes[m.index]
-	m.index++
-	return code, nil
-}
-
-type MockRepository struct {
-	countAndIncFunc func(ip string) (int, error)
-	createFunc      func(l *link.Link, ip string) error
-	decrementFunc   func(ip string) error
-
-	DecrementCalls int
-}
-
-func (m *MockRepository) CountByIPAndIncrement(_ context.Context, ip string) (int, error) {
-	return m.countAndIncFunc(ip)
-}
-
-func (m *MockRepository) CreateIfNotExists(_ context.Context, l *link.Link, ip string) error {
-	return m.createFunc(l, ip)
-}
-
-func (m *MockRepository) DecrementIPCounter(_ context.Context, ip string) error {
-	m.DecrementCalls++
-	if m.decrementFunc != nil {
-		return m.decrementFunc(ip)
-	}
-	return nil
-}
-
-func (m *MockRepository) GetByCode(_ context.Context, code string) (*link.Link, error) {
-	return nil, nil
-}
-
 func TestService_CreateLink(t *testing.T) {
 	ctx := context.Background()
 
@@ -154,7 +111,7 @@ func TestService_CreateLink(t *testing.T) {
 			tt.setupRepo(repo)
 			tt.setupGen(gen)
 
-			s := service.NewService(gen, repo)
+			s := service.New(gen, repo)
 			l, err := s.CreateLink(ctx, tt.ip, tt.url)
 
 			if tt.wantErr != nil {
@@ -211,7 +168,7 @@ func TestService_CreateLink_Concurrency(t *testing.T) {
 		gen.codes[i] = fmt.Sprintf("CODE%d", i)
 	}
 
-	s := service.NewService(gen, repo)
+	s := service.New(gen, repo)
 
 	var wg sync.WaitGroup
 	for i := 0; i < numRequests; i++ {

@@ -21,6 +21,6 @@ type Service struct {
 	linkRepo LinkRepository
 }
 
-func NewService(codeGen CodeGenerator, linkRepo LinkRepository) *Service {
+func New(codeGen CodeGenerator, linkRepo LinkRepository) *Service {
 	return &Service{codeGen: codeGen, linkRepo: linkRepo}
 }

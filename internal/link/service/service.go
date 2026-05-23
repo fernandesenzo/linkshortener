@@ -11,10 +11,11 @@ type CodeGenerator interface {
 }
 
 type LinkRepository interface {
-	CreateIfNotExists(context.Context, *link.Link, string) error
-	CountByIPAndIncrement(ctx context.Context, ip string) (int, error)
+	GetIPLock(ctx context.Context, ip string) (unlock func(), err error)
+	Create(ctx context.Context, link *link.Link, ip string) error
+	CountByIP(ctx context.Context, ip string) (int, error)
 	GetByCode(ctx context.Context, code string) (*link.Link, error)
-	DecrementIPCounter(ctx context.Context, ip string) error
+	IncrementIPCounter(ctx context.Context, ip string) error
 }
 type Service struct {
 	codeGen  CodeGenerator

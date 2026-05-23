@@ -17,38 +17,42 @@ func TestService_CreateLink(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name           string
-		ip             string
-		url            string
-		setupRepo      func(m *MockRepository)
-		setupGen       func(m *MockCodeGenerator)
-		wantErr        error
-		wantCode       string
-		wantDecrements int
+		name               string
+		ip                 string
+		url                string
+		setupRepo          func(m *MockRepository)
+		setupGen           func(m *MockCodeGenerator)
+		wantErr            error
+		wantCode           string
+		wantIncrements     int
+		wantGetIPLockCalls int
+		wantUnlockCalls    int
 	}{
 		{
 			name: "success on first try",
 			ip:   "127.0.0.1",
 			url:  "https://example.com",
 			setupRepo: func(m *MockRepository) {
-				m.countAndIncFunc = func(ip string) (int, error) { return 1, nil }
-				m.createFunc = func(l *link.Link, ip string) error { return nil }
+				m.countByIPFunc = func(ctx context.Context, ip string) (int, error) { return 1, nil }
+				m.createFunc = func(ctx context.Context, l *link.Link, ip string) error { return nil }
 			},
 			setupGen: func(m *MockCodeGenerator) {
 				m.codes = []string{"CODE01"}
 			},
-			wantErr:        nil,
-			wantCode:       "CODE01",
-			wantDecrements: 0,
+			wantErr:            nil,
+			wantCode:           "CODE01",
+			wantIncrements:     1,
+			wantGetIPLockCalls: 1,
+			wantUnlockCalls:    1,
 		},
 		{
 			name: "success after one collision",
 			ip:   "127.0.0.1",
 			url:  "https://example.com",
 			setupRepo: func(m *MockRepository) {
-				m.countAndIncFunc = func(ip string) (int, error) { return 1, nil }
+				m.countByIPFunc = func(ctx context.Context, ip string) (int, error) { return 1, nil }
 				calls := 0
-				m.createFunc = func(l *link.Link, ip string) error {
+				m.createFunc = func(ctx context.Context, l *link.Link, ip string) error {
 					if calls == 0 {
 						calls++
 						return repository.ErrConflict
@@ -59,48 +63,56 @@ func TestService_CreateLink(t *testing.T) {
 			setupGen: func(m *MockCodeGenerator) {
 				m.codes = []string{"COLLID", "SUCCESS"}
 			},
-			wantErr:        nil,
-			wantCode:       "SUCCESS",
-			wantDecrements: 0,
+			wantErr:            nil,
+			wantCode:           "SUCCESS",
+			wantIncrements:     1,
+			wantGetIPLockCalls: 1,
+			wantUnlockCalls:    1,
 		},
 		{
-			name: "too many collisions calls decrement",
+			name: "too many collisions",
 			ip:   "127.0.0.1",
 			url:  "https://example.com",
 			setupRepo: func(m *MockRepository) {
-				m.countAndIncFunc = func(ip string) (int, error) { return 1, nil }
-				m.createFunc = func(l *link.Link, ip string) error { return repository.ErrConflict }
+				m.countByIPFunc = func(ctx context.Context, ip string) (int, error) { return 1, nil }
+				m.createFunc = func(ctx context.Context, l *link.Link, ip string) error { return repository.ErrConflict }
 			},
 			setupGen: func(m *MockCodeGenerator) {
 				m.codes = []string{"C1", "C2", "C3", "C4", "C5"}
 			},
-			wantErr:        link.ErrTooManyCollisions,
-			wantDecrements: 1,
+			wantErr:            link.ErrTooManyCollisions,
+			wantIncrements:     0,
+			wantGetIPLockCalls: 1,
+			wantUnlockCalls:    1,
 		},
 		{
-			name: "ip limit exceeded calls decrement",
+			name: "ip limit exceeded",
 			ip:   "127.0.0.1",
 			url:  "https://example.com",
 			setupRepo: func(m *MockRepository) {
-				m.countAndIncFunc = func(ip string) (int, error) { return 11, nil }
+				m.countByIPFunc = func(ctx context.Context, ip string) (int, error) { return 11, nil }
 			},
-			setupGen:       func(m *MockCodeGenerator) {},
-			wantErr:        link.ErrTooManyActiveURLs,
-			wantDecrements: 1,
+			setupGen:           func(m *MockCodeGenerator) {},
+			wantErr:            link.ErrTooManyActiveURLs,
+			wantIncrements:     0,
+			wantGetIPLockCalls: 1,
+			wantUnlockCalls:    1,
 		},
 		{
-			name: "repo error calls decrement",
+			name: "repo error during creation",
 			ip:   "127.0.0.1",
 			url:  "https://example.com",
 			setupRepo: func(m *MockRepository) {
-				m.countAndIncFunc = func(ip string) (int, error) { return 1, nil }
-				m.createFunc = func(l *link.Link, ip string) error { return errors.New("db error") }
+				m.countByIPFunc = func(ctx context.Context, ip string) (int, error) { return 1, nil }
+				m.createFunc = func(ctx context.Context, l *link.Link, ip string) error { return errors.New("db error") }
 			},
 			setupGen: func(m *MockCodeGenerator) {
 				m.codes = []string{"CODE01"}
 			},
-			wantErr:        repository.ErrConflict, // Dummy, will check err != nil
-			wantDecrements: 1,
+			wantErr:            repository.ErrConflict, // dummy
+			wantIncrements:     0,
+			wantGetIPLockCalls: 1,
+			wantUnlockCalls:    1,
 		},
 	}
 
@@ -115,7 +127,7 @@ func TestService_CreateLink(t *testing.T) {
 			l, err := s.CreateLink(ctx, tt.ip, tt.url)
 
 			if tt.wantErr != nil {
-				if tt.name == "repo error calls decrement" {
+				if tt.name == "repo error during creation" {
 					if err == nil {
 						t.Errorf("CreateLink() expected error, got nil")
 					}
@@ -126,8 +138,16 @@ func TestService_CreateLink(t *testing.T) {
 				t.Fatalf("CreateLink() unexpected error = %v", err)
 			}
 
-			if tt.wantDecrements != repo.DecrementCalls {
-				t.Errorf("DecrementIPCounter called %d times, want %d", repo.DecrementCalls, tt.wantDecrements)
+			if tt.wantIncrements != repo.IncrementIPCounterCalls {
+				t.Errorf("IncrementIPCounter called %d times, want %d", repo.IncrementIPCounterCalls, tt.wantIncrements)
+			}
+
+			if tt.wantGetIPLockCalls != repo.GetIPLockCalls {
+				t.Errorf("GetIPLock called %d times, want %d", repo.GetIPLockCalls, tt.wantGetIPLockCalls)
+			}
+
+			if tt.wantUnlockCalls != repo.UnlockCalls {
+				t.Errorf("Unlock called %d times, want %d", repo.UnlockCalls, tt.wantUnlockCalls)
 			}
 
 			if tt.wantErr == nil && err == nil {
@@ -145,20 +165,26 @@ func TestService_CreateLink_Concurrency(t *testing.T) {
 	limit := 10
 	numRequests := 50
 
-	dbCount := int32(initialCount)
+	var mu sync.Mutex
+	dbCount := initialCount
 	var successes int32
 	var failures int32
 
 	repo := &MockRepository{
-		countAndIncFunc: func(ip string) (int, error) {
-			newVal := atomic.AddInt32(&dbCount, 1)
-			return int(newVal), nil
+		getIPLockFunc: func(ctx context.Context, ip string) (func(), error) {
+			mu.Lock()
+			return func() {
+				mu.Unlock()
+			}, nil
 		},
-		createFunc: func(l *link.Link, ip string) error {
+		countByIPFunc: func(ctx context.Context, ip string) (int, error) {
+			return dbCount, nil
+		},
+		createFunc: func(ctx context.Context, l *link.Link, ip string) error {
 			return nil
 		},
-		decrementFunc: func(ip string) error {
-			atomic.AddInt32(&dbCount, -1)
+		incrementIPCounterFunc: func(ctx context.Context, ip string) error {
+			dbCount++
 			return nil
 		},
 	}
@@ -190,7 +216,7 @@ func TestService_CreateLink_Concurrency(t *testing.T) {
 		t.Errorf("expected %d successes, got %d", expectedSuccesses, successes)
 	}
 
-	if int(dbCount) != limit {
+	if dbCount != limit {
 		t.Errorf("final count should be %d, got %d", limit, dbCount)
 	}
 

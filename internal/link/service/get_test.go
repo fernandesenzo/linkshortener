@@ -24,7 +24,7 @@ func TestService_GetLink(t *testing.T) {
 			name: "success - link found",
 			code: "ABCDEF",
 			setupRepo: func(m *MockRepository) {
-				m.getByCodeFunc = func(code string) (*link.Link, error) {
+				m.getByCodeFunc = func(ctx context.Context, code string) (*link.Link, error) {
 					return &link.Link{
 						OriginalURL: "https://example.com",
 						Code:        "ABCDEF",
@@ -41,7 +41,7 @@ func TestService_GetLink(t *testing.T) {
 			name: "error - link not found",
 			code: "NOTFND",
 			setupRepo: func(m *MockRepository) {
-				m.getByCodeFunc = func(code string) (*link.Link, error) {
+				m.getByCodeFunc = func(ctx context.Context, code string) (*link.Link, error) {
 					return nil, repository.ErrNotFound
 				}
 			},
@@ -52,7 +52,7 @@ func TestService_GetLink(t *testing.T) {
 			name: "error - repository failure",
 			code: "DBERR1",
 			setupRepo: func(m *MockRepository) {
-				m.getByCodeFunc = func(code string) (*link.Link, error) {
+				m.getByCodeFunc = func(ctx context.Context, code string) (*link.Link, error) {
 					return nil, errors.New("database connection lost")
 				}
 			},

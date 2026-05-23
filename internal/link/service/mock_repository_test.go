@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/fernandesenzo/linkshortener/internal/link"
+	"github.com/fernandesenzo/linkshortener/internal/link/repository"
 )
 
 type MockCodeGenerator struct {
@@ -22,33 +23,58 @@ func (m *MockCodeGenerator) Generate(len int) (string, error) {
 }
 
 type MockRepository struct {
-	countAndIncFunc func(ip string) (int, error)
-	createFunc      func(l *link.Link, ip string) error
-	decrementFunc   func(ip string) error
-	getByCodeFunc   func(code string) (*link.Link, error)
+	getIPLockFunc          func(ctx context.Context, ip string) (func(), error)
+	createFunc             func(ctx context.Context, l *link.Link, ip string) error
+	countByIPFunc          func(ctx context.Context, ip string) (int, error)
+	getByCodeFunc          func(ctx context.Context, code string) (*link.Link, error)
+	incrementIPCounterFunc func(ctx context.Context, ip string) error
 
-	DecrementCalls int
+	GetIPLockCalls          int
+	UnlockCalls             int
+	CreateCalls             int
+	CountByIPCalls          int
+	GetByCodeCalls          int
+	IncrementIPCounterCalls int
 }
 
-func (m *MockRepository) CountByIPAndIncrement(_ context.Context, ip string) (int, error) {
-	return m.countAndIncFunc(ip)
+func (m *MockRepository) GetIPLock(ctx context.Context, ip string) (unlock func(), err error) {
+	m.GetIPLockCalls++
+	if m.getIPLockFunc != nil {
+		return m.getIPLockFunc(ctx, ip)
+	}
+	return func() {
+		m.UnlockCalls++
+	}, nil
 }
 
-func (m *MockRepository) CreateIfNotExists(_ context.Context, l *link.Link, ip string) error {
-	return m.createFunc(l, ip)
-}
-
-func (m *MockRepository) DecrementIPCounter(_ context.Context, ip string) error {
-	m.DecrementCalls++
-	if m.decrementFunc != nil {
-		return m.decrementFunc(ip)
+func (m *MockRepository) Create(ctx context.Context, l *link.Link, ip string) error {
+	m.CreateCalls++
+	if m.createFunc != nil {
+		return m.createFunc(ctx, l, ip)
 	}
 	return nil
 }
 
-func (m *MockRepository) GetByCode(_ context.Context, code string) (*link.Link, error) {
-	if m.getByCodeFunc != nil {
-		return m.getByCodeFunc(code)
+func (m *MockRepository) CountByIP(ctx context.Context, ip string) (int, error) {
+	m.CountByIPCalls++
+	if m.countByIPFunc != nil {
+		return m.countByIPFunc(ctx, ip)
 	}
-	return nil, nil
+	return 0, nil
+}
+
+func (m *MockRepository) GetByCode(ctx context.Context, code string) (*link.Link, error) {
+	m.GetByCodeCalls++
+	if m.getByCodeFunc != nil {
+		return m.getByCodeFunc(ctx, code)
+	}
+	return nil, repository.ErrNotFound
+}
+
+func (m *MockRepository) IncrementIPCounter(ctx context.Context, ip string) error {
+	m.IncrementIPCounterCalls++
+	if m.incrementIPCounterFunc != nil {
+		return m.incrementIPCounterFunc(ctx, ip)
+	}
+	return nil
 }

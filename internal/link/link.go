@@ -1,14 +1,19 @@
 package link
 
-import "net/url"
+import (
+	"net/url"
+	"time"
+)
 
 type Link struct {
 	OriginalURL string
 	Code        string
+	ExpiresAt   time.Time
 }
 
 const CreateLinkMaxAttempts = 5
 const CodeLength = 6
+const DefaultTTL = time.Hour * 24
 const maxURLlength = 200
 const maxActiveLinksForIP = 10
 

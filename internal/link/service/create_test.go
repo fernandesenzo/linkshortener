@@ -7,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/fernandesenzo/linkshortener/internal/link"
 	"github.com/fernandesenzo/linkshortener/internal/link/repository"
@@ -153,6 +154,13 @@ func TestService_CreateLink(t *testing.T) {
 			if tt.wantErr == nil && err == nil {
 				if l.Code != tt.wantCode {
 					t.Errorf("CreateLink() code = %v, wantCode %v", l.Code, tt.wantCode)
+				}
+				diff := time.Until(l.ExpiresAt) - link.DefaultTTL
+				if diff < 0 {
+					diff = -diff
+				}
+				if diff > 5*time.Second {
+					t.Errorf("CreateLink() ExpiresAt = %v, want roughly %v (diff = %v)", l.ExpiresAt, time.Now().Add(link.DefaultTTL), diff)
 				}
 			}
 		})

@@ -12,7 +12,7 @@ import (
 
 func (r *RedisRepository) Create(ctx context.Context, l *link.Link, ip string) error {
 	linkKey := linkprefix + l.Code
-	ipSetPrefix := ipSetPrefix + ip
+	ipKey := ipSetPrefix + ip
 
 	ok, err := r.client.SetNX(ctx, linkKey, l.OriginalURL, time.Until(l.ExpiresAt)).Result()
 
@@ -23,7 +23,7 @@ func (r *RedisRepository) Create(ctx context.Context, l *link.Link, ip string) e
 		return ErrConflict
 	}
 
-	_, err = r.client.ZAdd(ctx, ipSetPrefix, redis.Z{Score: float64(l.ExpiresAt.Unix()), Member: l.Code}).Result()
+	_, err = r.client.ZAdd(ctx, ipKey, redis.Z{Score: float64(l.ExpiresAt.Unix()), Member: l.Code}).Result()
 	if err != nil {
 		if _, err1 := r.client.Del(ctx, linkKey).Result(); err1 != nil {
 			//TODO: refactor this when a structured logger is created

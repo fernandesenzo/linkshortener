@@ -25,7 +25,7 @@ func TestService_CreateLink(t *testing.T) {
 		setupGen           func(m *MockCodeGenerator)
 		wantErr            error
 		wantCode           string
-		wantIncrements     int
+		wantCreateCalls    int
 		wantGetIPLockCalls int
 		wantUnlockCalls    int
 	}{
@@ -42,7 +42,7 @@ func TestService_CreateLink(t *testing.T) {
 			},
 			wantErr:            nil,
 			wantCode:           "CODE01",
-			wantIncrements:     1,
+			wantCreateCalls:    1,
 			wantGetIPLockCalls: 1,
 			wantUnlockCalls:    1,
 		},
@@ -66,7 +66,7 @@ func TestService_CreateLink(t *testing.T) {
 			},
 			wantErr:            nil,
 			wantCode:           "SUCCESS",
-			wantIncrements:     1,
+			wantCreateCalls:    2,
 			wantGetIPLockCalls: 1,
 			wantUnlockCalls:    1,
 		},
@@ -82,7 +82,7 @@ func TestService_CreateLink(t *testing.T) {
 				m.codes = []string{"C1", "C2", "C3", "C4", "C5"}
 			},
 			wantErr:            link.ErrTooManyCollisions,
-			wantIncrements:     0,
+			wantCreateCalls:    5,
 			wantGetIPLockCalls: 1,
 			wantUnlockCalls:    1,
 		},
@@ -95,7 +95,7 @@ func TestService_CreateLink(t *testing.T) {
 			},
 			setupGen:           func(m *MockCodeGenerator) {},
 			wantErr:            link.ErrTooManyActiveURLs,
-			wantIncrements:     0,
+			wantCreateCalls:    0,
 			wantGetIPLockCalls: 1,
 			wantUnlockCalls:    1,
 		},
@@ -111,7 +111,7 @@ func TestService_CreateLink(t *testing.T) {
 				m.codes = []string{"CODE01"}
 			},
 			wantErr:            repository.ErrConflict, // dummy
-			wantIncrements:     0,
+			wantCreateCalls:    1,
 			wantGetIPLockCalls: 1,
 			wantUnlockCalls:    1,
 		},
@@ -139,8 +139,8 @@ func TestService_CreateLink(t *testing.T) {
 				t.Fatalf("CreateLink() unexpected error = %v", err)
 			}
 
-			if tt.wantIncrements != repo.IncrementIPCounterCalls {
-				t.Errorf("IncrementIPCounter called %d times, want %d", repo.IncrementIPCounterCalls, tt.wantIncrements)
+			if tt.wantCreateCalls != repo.CreateCalls {
+				t.Errorf("Create called %d times, want %d", repo.CreateCalls, tt.wantCreateCalls)
 			}
 
 			if tt.wantGetIPLockCalls != repo.GetIPLockCalls {
@@ -189,9 +189,6 @@ func TestService_CreateLink_Concurrency(t *testing.T) {
 			return dbCount, nil
 		},
 		createFunc: func(ctx context.Context, l *link.Link, ip string) error {
-			return nil
-		},
-		incrementIPCounterFunc: func(ctx context.Context, ip string) error {
 			dbCount++
 			return nil
 		},

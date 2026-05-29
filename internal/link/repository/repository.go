@@ -3,6 +3,8 @@ package repository
 import (
 	"errors"
 
+	"github.com/go-redsync/redsync/v4"
+	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -18,8 +20,10 @@ const ipSetPrefix = "shortener:ipLinks:"
 
 type RedisRepository struct {
 	client *redis.Client
+	rs     *redsync.Redsync
 }
 
 func NewRedisRepository(client *redis.Client) *RedisRepository {
-	return &RedisRepository{client: client}
+	pool := goredis.NewPool(client)
+	return &RedisRepository{client: client, rs: redsync.New(pool)}
 }

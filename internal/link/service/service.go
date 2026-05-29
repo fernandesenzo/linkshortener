@@ -15,7 +15,6 @@ type LinkRepository interface {
 	Create(ctx context.Context, l *link.Link, ip string) error
 	CountByIP(ctx context.Context, ip string) (int, error)
 	GetByCode(ctx context.Context, code string) (*link.Link, error)
-	IncrementIPCounter(ctx context.Context, ip string) error
 }
 type Service struct {
 	codeGen  CodeGenerator

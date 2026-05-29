@@ -23,18 +23,16 @@ func (m *MockCodeGenerator) Generate(len int) (string, error) {
 }
 
 type MockRepository struct {
-	getIPLockFunc          func(ctx context.Context, ip string) (func(), error)
-	createFunc             func(ctx context.Context, l *link.Link, ip string) error
-	countByIPFunc          func(ctx context.Context, ip string) (int, error)
-	getByCodeFunc          func(ctx context.Context, code string) (*link.Link, error)
-	incrementIPCounterFunc func(ctx context.Context, ip string) error
+	getIPLockFunc  func(ctx context.Context, ip string) (func(), error)
+	createFunc     func(ctx context.Context, l *link.Link, ip string) error
+	countByIPFunc  func(ctx context.Context, ip string) (int, error)
+	getByCodeFunc  func(ctx context.Context, code string) (*link.Link, error)
 
-	GetIPLockCalls          int
-	UnlockCalls             int
-	CreateCalls             int
-	CountByIPCalls          int
-	GetByCodeCalls          int
-	IncrementIPCounterCalls int
+	GetIPLockCalls int
+	UnlockCalls    int
+	CreateCalls    int
+	CountByIPCalls int
+	GetByCodeCalls int
 }
 
 func (m *MockRepository) GetIPLock(ctx context.Context, ip string) (unlock func(), err error) {
@@ -69,12 +67,4 @@ func (m *MockRepository) GetByCode(ctx context.Context, code string) (*link.Link
 		return m.getByCodeFunc(ctx, code)
 	}
 	return nil, repository.ErrNotFound
-}
-
-func (m *MockRepository) IncrementIPCounter(ctx context.Context, ip string) error {
-	m.IncrementIPCounterCalls++
-	if m.incrementIPCounterFunc != nil {
-		return m.incrementIPCounterFunc(ctx, ip)
-	}
-	return nil
 }

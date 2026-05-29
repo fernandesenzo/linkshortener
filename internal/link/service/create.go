@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/fernandesenzo/linkshortener/internal/link"
@@ -50,16 +49,6 @@ func (s *Service) CreateLink(ctx context.Context, ip string, url string) (l *lin
 			}
 			return nil, fmt.Errorf("service.CreateLink: failed to create link: %w", err)
 		}
-
-		if err := s.linkRepo.IncrementIPCounter(ctx, ip); err != nil {
-			//TODO: inject a structured logger into the service
-			slog.WarnContext(ctx, "service.CreateLink: failed to increment ip counter after creating link",
-				"ip", ip,
-				"code", code,
-				"error", err,
-			)
-		}
-
 		return l, nil
 	}
 	return nil, link.ErrTooManyCollisions

@@ -15,7 +15,7 @@ func (s *Service) GetLink(ctx context.Context, code string) (*link.Link, error) 
 		if !errors.Is(err, repository.ErrNotFound) {
 			return nil, fmt.Errorf("service.GetLink: failed to get link: %w", err)
 		}
-		return nil, err
+		return nil, link.ErrNotFound
 	}
 	return l, nil
 }

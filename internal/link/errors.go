@@ -7,4 +7,5 @@ var (
 	ErrTooManyActiveURLs = errors.New("too many active URLs created from your IP.")
 	ErrTooManyCollisions = errors.New("could not create link because it reached maximum collisions")
 	ErrInvalidURL        = errors.New("invalid url")
+	ErrNotFound          = errors.New("no link found with such code")
 )

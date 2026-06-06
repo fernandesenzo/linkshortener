@@ -46,7 +46,7 @@ func TestService_GetLink(t *testing.T) {
 				}
 			},
 			wantLink: nil,
-			wantErr:  repository.ErrNotFound,
+			wantErr:  link.ErrNotFound,
 		},
 		{
 			name: "error - repository failure",

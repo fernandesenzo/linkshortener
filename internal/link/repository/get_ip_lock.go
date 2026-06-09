@@ -19,7 +19,6 @@ func (r *RedisRepository) GetIPLock(ctx context.Context, ip string) (func(), err
 	}
 	return func() {
 		if ok, err := mutex.Unlock(); !ok || err != nil {
-			//TODO: use injected logger here in the future
 			slog.ErrorContext(ctx, "repository.GetIPLock: failed to unlock mutex",
 				"ip", ip,
 				"error", err)

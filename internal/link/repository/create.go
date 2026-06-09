@@ -26,7 +26,6 @@ func (r *RedisRepository) Create(ctx context.Context, l *link.Link, ip string) e
 	_, err = r.client.ZAdd(ctx, ipKey, redis.Z{Score: float64(l.ExpiresAt.Unix()), Member: l.Code}).Result()
 	if err != nil {
 		if _, err1 := r.client.Del(ctx, linkKey).Result(); err1 != nil {
-			//TODO: refactor this when a structured logger is created
 			slog.WarnContext(ctx, "repository.Create: failed to delete link after not adding it to the ipset",
 				"ip", ip,
 				"code", l.Code,

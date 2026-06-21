@@ -15,12 +15,12 @@ import (
 
 func TestRecover(t *testing.T) {
 	tests := []struct {
-		name          string
-		shouldPanic   bool
-		panicVal      interface{}
-		wantStatus    int
-		wantBody      string
-		expectLogErr  string
+		name         string
+		shouldPanic  bool
+		panicVal     interface{}
+		wantStatus   int
+		wantBody     string
+		expectLogErr string
 	}{
 		{
 			name:        "no panic",
@@ -71,17 +71,14 @@ func TestRecover(t *testing.T) {
 
 			m.ServeHTTP(rec, req)
 
-			// Verify response status
 			if rec.Code != tt.wantStatus {
 				t.Errorf("got status = %d, want %d", rec.Code, tt.wantStatus)
 			}
 
-			// Verify response body
 			if rec.Body.String() != tt.wantBody {
 				t.Errorf("got body = %q, want %q", rec.Body.String(), tt.wantBody)
 			}
 
-			// Verify logs if panic happened
 			if tt.shouldPanic {
 				var parsed map[string]interface{}
 				err := json.Unmarshal(buf.Bytes(), &parsed)

@@ -154,7 +154,7 @@ func TestHandler_Create(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewHandler(tt.mockSvc)
+			h := New(tt.mockSvc)
 
 			req := httptest.NewRequest(http.MethodPost, "/links", bytes.NewBufferString(tt.reqBody))
 			if tt.contentType != "" {

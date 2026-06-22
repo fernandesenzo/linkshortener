@@ -69,7 +69,7 @@ func TestHandler_Get(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewHandler(tt.mockSvc)
+			h := New(tt.mockSvc)
 
 			req := httptest.NewRequest(http.MethodGet, "/"+tt.code, nil)
 			req.SetPathValue("code", tt.code)

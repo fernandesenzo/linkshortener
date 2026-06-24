@@ -23,10 +23,10 @@ func (m *MockCodeGenerator) Generate(len int) (string, error) {
 }
 
 type MockRepository struct {
-	getIPLockFunc  func(ctx context.Context, ip string) (func(), error)
-	createFunc     func(ctx context.Context, l *link.Link, ip string) error
-	countByIPFunc  func(ctx context.Context, ip string) (int, error)
-	getByCodeFunc  func(ctx context.Context, code string) (*link.Link, error)
+	getIPLockFunc func(ctx context.Context, ip string) (func(), error)
+	createFunc    func(ctx context.Context, l *link.Link, ip string) error
+	countByIPFunc func(ctx context.Context, ip string) (int, error)
+	getByCodeFunc func(ctx context.Context, code string) (*link.Link, error)
 
 	GetIPLockCalls int
 	UnlockCalls    int

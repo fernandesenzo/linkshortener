@@ -22,6 +22,7 @@ import (
 )
 
 func main() {
+	logger.Setup()
 	if err := run(); err != nil {
 		slog.Error("application failed", "err", err)
 		os.Exit(1)
@@ -30,11 +31,8 @@ func main() {
 
 func run() error {
 	if err := godotenv.Load(); err != nil {
-		return fmt.Errorf("main.run: could not read the .env file: %w", err)
+		slog.Info("could not read .env file, assuming they are already injected")
 	}
-
-	logger.Setup()
-
 	redisAddr := os.Getenv("REDIS_ADDR")
 	redisPswd := os.Getenv("REDIS_PASSWORD")
 	port := os.Getenv("SERVER_PORT")
@@ -62,8 +60,8 @@ func run() error {
 	h := handler.New(svc)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /links", h.Create)
-	mux.HandleFunc("GET /links/{id}", h.Get)
+	mux.HandleFunc("POST /api/links", h.Create)
+	mux.HandleFunc("GET /{code}", h.Get)
 
 	var handlerStack http.Handler = mux
 	handlerStack = middleware.AccessLog(handlerStack)

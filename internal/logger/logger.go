@@ -22,13 +22,22 @@ func (h *customHandler) Handle(ctx context.Context, r slog.Record) error {
 }
 
 func Setup() {
-	opts := &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+	appEnv := os.Getenv("APP_ENV")
+
+	var baseHandler slog.Handler
+
+	if appEnv == "development" {
+		opts := &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		}
+		baseHandler = slog.NewTextHandler(os.Stdout, opts)
+	} else {
+		opts := &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		}
+		baseHandler = slog.NewJSONHandler(os.Stdout, opts)
 	}
-
-	jsonHandler := slog.NewJSONHandler(os.Stdout, opts)
-
-	handlerWithAttr := jsonHandler.WithAttrs([]slog.Attr{
+	handlerWithAttr := baseHandler.WithAttrs([]slog.Attr{
 		slog.String("app", "shortener"),
 	})
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/fernandesenzo/linkshortener/internal/link"
@@ -49,6 +50,7 @@ func (s *Service) CreateLink(ctx context.Context, ip string, url string) (l *lin
 			}
 			return nil, fmt.Errorf("service.CreateLink: failed to create link: %w", err)
 		}
+		slog.Debug("link created")
 		return l, nil
 	}
 	return nil, link.ErrTooManyCollisions

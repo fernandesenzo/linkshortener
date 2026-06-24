@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  redis-local:
+    image: redis:7-alpine
+    container_name: linkshortener-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass pwd
+    volumes:
+      - redis_data:/data
+
+  api:
+    build: .
+    container_name: linkshortener-api
+    ports:
+      - "8081:8080"
+    environment:
+      - APP_ENV=development
+      - SERVER_PORT=8080
+      - REDIS_ADDR=redis-local:6379
+      - REDIS_PASSWORD=pwd
+      - ALLOWED_ORIGINS=http://localhost:3000
+    depends_on:
+      - redis-local
+
+volumes:
+  redis_data:

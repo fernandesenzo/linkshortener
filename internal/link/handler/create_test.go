@@ -156,7 +156,7 @@ func TestHandler_Create(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			h := New(tt.mockSvc)
 
-			req := httptest.NewRequest(http.MethodPost, "/links", bytes.NewBufferString(tt.reqBody))
+			req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewBufferString(tt.reqBody))
 			if tt.contentType != "" {
 				req.Header.Set("Content-Type", tt.contentType)
 			}

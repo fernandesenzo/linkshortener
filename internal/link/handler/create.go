@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
-	"net"
 	"net/http"
 	"strings"
 
+	"github.com/fernandesenzo/linkshortener/internal/ip"
 	"github.com/fernandesenzo/linkshortener/internal/link"
 )
 
@@ -27,14 +27,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO: when moving to cloudflare, use forwarded for instead
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	clientIP, err := ip.ClientIP(r)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "failed to obtain ip from remote address", "ip", r.RemoteAddr)
+		slog.ErrorContext(r.Context(), "failed to obtain client ip", "remote_addr", r.RemoteAddr)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	l, err := h.svc.CreateLink(r.Context(), ip, req.URL)
+	l, err := h.svc.CreateLink(r.Context(), clientIP, req.URL)
 	if err != nil {
 		handleCreateError(err, w, r.Context())
 		return

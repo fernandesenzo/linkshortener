@@ -18,6 +18,7 @@ func TestAccessLog(t *testing.T) {
 		method        string
 		path          string
 		remoteAddr    string
+		wantIP        string
 		handlerStatus int
 		latencyDelay  time.Duration
 	}{
@@ -26,6 +27,7 @@ func TestAccessLog(t *testing.T) {
 			method:        "GET",
 			path:          "/info",
 			remoteAddr:    "192.168.1.1:1234",
+			wantIP:        "192.168.1.1",
 			handlerStatus: http.StatusOK,
 			latencyDelay:  10 * time.Millisecond,
 		},
@@ -34,6 +36,7 @@ func TestAccessLog(t *testing.T) {
 			method:        "POST",
 			path:          "/create",
 			remoteAddr:    "10.0.0.1:5678",
+			wantIP:        "10.0.0.1",
 			handlerStatus: http.StatusBadRequest,
 			latencyDelay:  0,
 		},
@@ -82,8 +85,8 @@ func TestAccessLog(t *testing.T) {
 				t.Errorf("got path = %v, want %v", parsed["path"], tt.path)
 			}
 
-			if parsed["ip"] != tt.remoteAddr {
-				t.Errorf("got ip = %v, want %v", parsed["ip"], tt.remoteAddr)
+			if parsed["ip"] != tt.wantIP {
+				t.Errorf("got ip = %v, want %v", parsed["ip"], tt.wantIP)
 			}
 
 			statusFloat, ok := parsed["status"].(float64)

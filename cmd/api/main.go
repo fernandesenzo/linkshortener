@@ -33,12 +33,15 @@ func run() error {
 	if err := godotenv.Load(); err != nil {
 		slog.Info("could not read .env file, assuming they are already injected")
 	}
+	appEnv := os.Getenv("APP_ENV")
+	port := os.Getenv("SERVER_PORT")
+	hostPort := os.Getenv("HOST_PORT")
 	redisAddr := os.Getenv("REDIS_ADDR")
 	redisPswd := os.Getenv("REDIS_PASSWORD")
-	port := os.Getenv("SERVER_PORT")
+	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
 
-	if redisAddr == "" || port == "" || redisPswd == "" {
-		return fmt.Errorf("main.run: some variables from env came empty")
+	if appEnv == "" || port == "" || hostPort == "" || redisAddr == "" || allowedOrigins == "" {
+		return fmt.Errorf("main.run: required environment variables are empty (check APP_ENV, SERVER_PORT, HOST_PORT, REDIS_ADDR, ALLOWED_ORIGINS)")
 	}
 
 	redisClient, err := infra.NewRedisClient(redisAddr, redisPswd)
@@ -65,7 +68,7 @@ func run() error {
 
 	var handlerStack http.Handler = mux
 	handlerStack = middleware.AccessLog(handlerStack)
-	handlerStack = middleware.ApplyHeaders(handlerStack)
+	middleware.ApplyHeaders(allowedOrigins)(handlerStack)
 	handlerStack = middleware.InjectReqID(handlerStack)
 	handlerStack = middleware.Recover(handlerStack)
 

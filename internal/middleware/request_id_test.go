@@ -14,15 +14,31 @@ func TestInjectReqID(t *testing.T) {
 	tests := []struct {
 		name         string
 		headerReqID  string
+		headerCFRay  string
 		wantCustomID bool
+		wantID       string
 	}{
 		{
 			name:         "uses existing X-Request-ID header",
 			headerReqID:  "existing-req-id-12345",
 			wantCustomID: true,
+			wantID:       "existing-req-id-12345",
 		},
 		{
-			name:         "generates new UUID request ID if header is missing",
+			name:         "uses CF-Ray header if X-Request-ID is missing",
+			headerCFRay:  "5cf-ray-id-67890",
+			wantCustomID: true,
+			wantID:       "5cf-ray-id-67890",
+		},
+		{
+			name:         "prefers X-Request-ID header over CF-Ray header",
+			headerReqID:  "existing-req-id-12345",
+			headerCFRay:  "5cf-ray-id-67890",
+			wantCustomID: true,
+			wantID:       "existing-req-id-12345",
+		},
+		{
+			name:         "generates new UUID request ID if headers are missing",
 			headerReqID:  "",
 			wantCustomID: false,
 		},
@@ -45,6 +61,9 @@ func TestInjectReqID(t *testing.T) {
 			if tt.headerReqID != "" {
 				req.Header.Set("X-Request-ID", tt.headerReqID)
 			}
+			if tt.headerCFRay != "" {
+				req.Header.Set("CF-Ray", tt.headerCFRay)
+			}
 
 			rec := httptest.NewRecorder()
 
@@ -55,8 +74,8 @@ func TestInjectReqID(t *testing.T) {
 			}
 
 			if tt.wantCustomID {
-				if receivedID != tt.headerReqID {
-					t.Errorf("got request ID = %q, want %q", receivedID, tt.headerReqID)
+				if receivedID != tt.wantID {
+					t.Errorf("got request ID = %q, want %q", receivedID, tt.wantID)
 				}
 			} else {
 				if receivedID == "" {
@@ -66,6 +85,11 @@ func TestInjectReqID(t *testing.T) {
 						t.Errorf("expected a valid UUID request ID, but got error: %v (raw: %q)", err, receivedID)
 					}
 				}
+			}
+
+			respHeader := rec.Header().Get("X-Request-ID")
+			if respHeader != receivedID {
+				t.Errorf("got response header X-Request-ID = %q, want %q", respHeader, receivedID)
 			}
 		})
 	}

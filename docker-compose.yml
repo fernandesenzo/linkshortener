@@ -14,13 +14,9 @@ services:
     build: .
     container_name: linkshortener-api
     ports:
-      - "8081:8080"
-    environment:
-      - APP_ENV=development
-      - SERVER_PORT=8080
-      - REDIS_ADDR=redis-local:6379
-      - REDIS_PASSWORD=pwd
-      - ALLOWED_ORIGINS=http://localhost:3000
+      - "${HOST_PORT:-8081}:${SERVER_PORT}"
+    env_file:
+      - .env
     depends_on:
       - redis-local
 

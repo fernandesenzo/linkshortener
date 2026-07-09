@@ -56,7 +56,7 @@ func TestCreateLink(t *testing.T) {
 	}
 
 	var result map[string]string
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	if result["code"] == "" || len(result["code"]) != 6 {
 		t.Errorf("expected code with length 6, got %q", result["code"])
 	}
@@ -69,7 +69,7 @@ func TestRedirectValidCode(t *testing.T) {
 	body := `{"url":"https://example.com"}`
 	resp, _ := ts.Client().Post(ts.URL+"/api/links", "application/json", strings.NewReader(body))
 	var result map[string]string
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	resp.Body.Close()
 
 	client := &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -314,7 +314,7 @@ func TestGetLinkResponseBody(t *testing.T) {
 	createBody := `{"url":"https://example.com"}`
 	resp, _ := ts.Client().Post(ts.URL+"/api/links", "application/json", strings.NewReader(createBody))
 	var createResult map[string]string
-	json.NewDecoder(resp.Body).Decode(&createResult)
+	_ = json.NewDecoder(resp.Body).Decode(&createResult)
 	resp.Body.Close()
 
 	client := &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error {

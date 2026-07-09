@@ -63,7 +63,7 @@ func run() error {
 	h := handler.New(svc)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/links", h.Create)
+	mux.Handle("POST /api/links", middleware.BodyLimit(4096)(http.HandlerFunc(h.Create)))
 	mux.HandleFunc("GET /{code}", h.Get)
 
 	var handlerStack http.Handler = mux

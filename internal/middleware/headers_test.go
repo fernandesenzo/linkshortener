@@ -18,7 +18,7 @@ func TestApplyHeaders(t *testing.T) {
 		{"Strict-Transport-Security", "max-age=31536000; includeSubDomains"},
 		{"Access-Control-Allow-Origin", "*"},
 		{"Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE"},
-		{"Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID"},
+		{"Access-Control-Allow-Headers", "Content-Type, X-Request-ID"},
 	}
 
 	t.Run("non-OPTIONS request should apply headers and call next handler with * allowed", func(t *testing.T) {

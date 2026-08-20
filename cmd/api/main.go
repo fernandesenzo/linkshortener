@@ -68,7 +68,7 @@ func run() error {
 
 	var handlerStack http.Handler = mux
 	handlerStack = middleware.AccessLog(handlerStack)
-	middleware.ApplyHeaders(allowedOrigins)(handlerStack)
+	handlerStack = middleware.ApplyHeaders(allowedOrigins)(handlerStack)
 	handlerStack = middleware.InjectReqID(handlerStack)
 	handlerStack = middleware.Recover(handlerStack)
 

@@ -28,7 +28,7 @@ func newTestServer(t *testing.T) *httptest.Server {
 	h := handler.New(svc)
 
 	mux := http.NewServeMux()
-	mux.Handle("POST /api/links", middleware.BodyLimit(4096)(http.HandlerFunc(h.Create)))
+	mux.Handle("POST /links", middleware.BodyLimit(4096)(http.HandlerFunc(h.Create)))
 	mux.HandleFunc("GET /{code}", h.Get)
 
 	var handlerStack http.Handler = mux
@@ -45,7 +45,7 @@ func TestCreateLink(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"url":"https://example.com"}`
-	resp, err := ts.Client().Post(ts.URL+"/api/links", "application/json", strings.NewReader(body))
+	resp, err := ts.Client().Post(ts.URL+"/links", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestRedirectValidCode(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"url":"https://example.com"}`
-	resp, _ := ts.Client().Post(ts.URL+"/api/links", "application/json", strings.NewReader(body))
+	resp, _ := ts.Client().Post(ts.URL+"/links", "application/json", strings.NewReader(body))
 	var result map[string]string
 	_ = json.NewDecoder(resp.Body).Decode(&result)
 	resp.Body.Close()
@@ -109,7 +109,7 @@ func TestCreateLinkInvalidURL(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"url":"not-a-valid-url"}`
-	resp, err := ts.Client().Post(ts.URL+"/api/links", "application/json", strings.NewReader(body))
+	resp, err := ts.Client().Post(ts.URL+"/links", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestCreateLinkURLTooLong(t *testing.T) {
 
 	longURL := "http://a" + strings.Repeat("b", 200) + ".com"
 	body := `{"url":"` + longURL + `"}`
-	resp, err := ts.Client().Post(ts.URL+"/api/links", "application/json", strings.NewReader(body))
+	resp, err := ts.Client().Post(ts.URL+"/links", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -141,7 +141,7 @@ func TestCreateLinkWrongContentType(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
 
-	resp, err := ts.Client().Post(ts.URL+"/api/links", "text/plain", strings.NewReader("hello"))
+	resp, err := ts.Client().Post(ts.URL+"/links", "text/plain", strings.NewReader("hello"))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -156,7 +156,7 @@ func TestCreateLinkMalformedJSON(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
 
-	resp, err := ts.Client().Post(ts.URL+"/api/links", "application/json", strings.NewReader("{broken"))
+	resp, err := ts.Client().Post(ts.URL+"/links", "application/json", strings.NewReader("{broken"))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -172,7 +172,7 @@ func TestCreateLinkUnknownFields(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"url":"https://example.com","extra":"field"}`
-	resp, err := ts.Client().Post(ts.URL+"/api/links", "application/json", strings.NewReader(body))
+	resp, err := ts.Client().Post(ts.URL+"/links", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -191,7 +191,7 @@ func TestIPRateLimit(t *testing.T) {
 	client := ts.Client()
 
 	for i := 0; i < 10; i++ {
-		resp, err := client.Post(ts.URL+"/api/links", "application/json", strings.NewReader(body))
+		resp, err := client.Post(ts.URL+"/links", "application/json", strings.NewReader(body))
 		if err != nil {
 			t.Fatalf("request %d: unexpected error: %v", i+1, err)
 		}
@@ -201,7 +201,7 @@ func TestIPRateLimit(t *testing.T) {
 		resp.Body.Close()
 	}
 
-	resp, err := client.Post(ts.URL+"/api/links", "application/json", strings.NewReader(body))
+	resp, err := client.Post(ts.URL+"/links", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -249,7 +249,7 @@ func TestUnknownRoute(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
 
-	resp, err := ts.Client().Get(ts.URL + "/api/nonexistent")
+	resp, err := ts.Client().Get(ts.URL + "/unknown/route")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -264,7 +264,7 @@ func TestCreateLinkRequestBody(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
 
-	resp, err := ts.Client().Post(ts.URL+"/api/links", "application/json", bytes.NewReader([]byte{}))
+	resp, err := ts.Client().Post(ts.URL+"/links", "application/json", bytes.NewReader([]byte{}))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -280,7 +280,7 @@ func TestBodyTooLarge(t *testing.T) {
 	defer ts.Close()
 
 	bigBody := strings.Repeat("x", 5000)
-	resp, err := ts.Client().Post(ts.URL+"/api/links", "application/json", strings.NewReader(bigBody))
+	resp, err := ts.Client().Post(ts.URL+"/links", "application/json", strings.NewReader(bigBody))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -296,7 +296,7 @@ func TestCreateLinkEmptyURL(t *testing.T) {
 	defer ts.Close()
 
 	body := `{"url":""}`
-	resp, err := ts.Client().Post(ts.URL+"/api/links", "application/json", strings.NewReader(body))
+	resp, err := ts.Client().Post(ts.URL+"/links", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -312,7 +312,7 @@ func TestGetLinkResponseBody(t *testing.T) {
 	defer ts.Close()
 
 	createBody := `{"url":"https://example.com"}`
-	resp, _ := ts.Client().Post(ts.URL+"/api/links", "application/json", strings.NewReader(createBody))
+	resp, _ := ts.Client().Post(ts.URL+"/links", "application/json", strings.NewReader(createBody))
 	var createResult map[string]string
 	_ = json.NewDecoder(resp.Body).Decode(&createResult)
 	resp.Body.Close()

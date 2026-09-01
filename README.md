@@ -36,7 +36,7 @@ go run ./cmd/api
 ```
 
 ### link creation
-`POST /api/links`
+`POST /links`
 ```json
 {
   "url": "https://example.com"

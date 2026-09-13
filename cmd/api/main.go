@@ -11,9 +11,10 @@ import (
 	"syscall"
 	"time"
 
+	healthHandler "github.com/fernandesenzo/linkshortener/internal/health/handler"
 	"github.com/fernandesenzo/linkshortener/internal/infra"
 	"github.com/fernandesenzo/linkshortener/internal/link/codegen"
-	"github.com/fernandesenzo/linkshortener/internal/link/handler"
+	linkHandler "github.com/fernandesenzo/linkshortener/internal/link/handler"
 	"github.com/fernandesenzo/linkshortener/internal/link/repository"
 	"github.com/fernandesenzo/linkshortener/internal/link/service"
 	"github.com/fernandesenzo/linkshortener/internal/logger"
@@ -60,10 +61,12 @@ func run() error {
 	codeGenerator := codegen.New()
 	repo := repository.NewRedisRepository(redisClient)
 	svc := service.New(codeGenerator, repo)
-	h := handler.New(svc)
+	h := linkHandler.New(svc)
+	healthHandler := healthHandler.New(redisClient)
 
 	mux := http.NewServeMux()
 	mux.Handle("POST /links", middleware.BodyLimit(4096)(http.HandlerFunc(h.Create)))
+	mux.HandleFunc("GET /health", healthHandler.Get)
 	mux.HandleFunc("GET /{code}", h.Get)
 
 	var handlerStack http.Handler = mux

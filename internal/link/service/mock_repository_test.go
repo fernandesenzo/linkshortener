@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"sync"
 
 	"github.com/fernandesenzo/linkshortener/internal/link"
 	"github.com/fernandesenzo/linkshortener/internal/link/repository"
@@ -23,6 +24,8 @@ func (m *MockCodeGenerator) Generate(len int) (string, error) {
 }
 
 type MockRepository struct {
+	callsMu sync.Mutex
+
 	getIPLockFunc func(ctx context.Context, ip string) (func(), error)
 	createFunc    func(ctx context.Context, l *link.Link, ip string) error
 	countByIPFunc func(ctx context.Context, ip string) (int, error)
@@ -35,18 +38,24 @@ type MockRepository struct {
 	GetByCodeCalls int
 }
 
+func (m *MockRepository) incrementCalls(counter *int) {
+	m.callsMu.Lock()
+	defer m.callsMu.Unlock()
+	(*counter)++
+}
+
 func (m *MockRepository) GetIPLock(ctx context.Context, ip string) (unlock func(), err error) {
-	m.GetIPLockCalls++
+	m.incrementCalls(&m.GetIPLockCalls)
 	if m.getIPLockFunc != nil {
 		return m.getIPLockFunc(ctx, ip)
 	}
 	return func() {
-		m.UnlockCalls++
+		m.incrementCalls(&m.UnlockCalls)
 	}, nil
 }
 
 func (m *MockRepository) Create(ctx context.Context, l *link.Link, ip string) error {
-	m.CreateCalls++
+	m.incrementCalls(&m.CreateCalls)
 	if m.createFunc != nil {
 		return m.createFunc(ctx, l, ip)
 	}
@@ -54,7 +63,7 @@ func (m *MockRepository) Create(ctx context.Context, l *link.Link, ip string) er
 }
 
 func (m *MockRepository) CountByIP(ctx context.Context, ip string) (int, error) {
-	m.CountByIPCalls++
+	m.incrementCalls(&m.CountByIPCalls)
 	if m.countByIPFunc != nil {
 		return m.countByIPFunc(ctx, ip)
 	}
@@ -62,7 +71,7 @@ func (m *MockRepository) CountByIP(ctx context.Context, ip string) (int, error) 
 }
 
 func (m *MockRepository) GetByCode(ctx context.Context, code string) (*link.Link, error) {
-	m.GetByCodeCalls++
+	m.incrementCalls(&m.GetByCodeCalls)
 	if m.getByCodeFunc != nil {
 		return m.getByCodeFunc(ctx, code)
 	}

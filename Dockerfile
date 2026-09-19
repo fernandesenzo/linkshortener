@@ -1,4 +1,4 @@
-FROM golang:1.26-alpine AS builder
+FROM golang:1.26.8-bookworm AS builder
 
 WORKDIR /app
 
@@ -9,13 +9,17 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/api
 
-FROM alpine:latest  
+FROM alpine:3.24
 
-RUN apk --no-cache add ca-certificates
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-WORKDIR /root/
+WORKDIR /app
 
-COPY --from=builder /app/main .
+COPY --from=builder --chown=root:appgroup /app/main .
+
+RUN chmod 750 /app/main
+
+USER appuser
 
 EXPOSE 8080
 

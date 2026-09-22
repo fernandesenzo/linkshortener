@@ -1,24 +1,27 @@
-version: '3.8'
-
 services:
   redis-local:
-    image: redis:7-alpine
-    container_name: linkshortener-redis
+    image: redis:7.4.11-alpine3.21
     ports:
-      - "6379:6379"
-    command: redis-server --requirepass pwd
+      - "127.0.0.1:6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
   api:
     build: .
-    container_name: linkshortener-api
     ports:
       - "${HOST_PORT:-8081}:${SERVER_PORT}"
     env_file:
       - .env
     depends_on:
-      - redis-local
+      redis-local:
+        condition: service_healthy
 
 volumes:
   redis_data:

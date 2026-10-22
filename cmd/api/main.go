@@ -36,13 +36,12 @@ func run() error {
 	}
 	appEnv := os.Getenv("APP_ENV")
 	port := os.Getenv("SERVER_PORT")
-	hostPort := os.Getenv("HOST_PORT")
 	redisAddr := os.Getenv("REDIS_ADDR")
 	redisPswd := os.Getenv("REDIS_PASSWORD")
 	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
 
-	if appEnv == "" || port == "" || hostPort == "" || redisAddr == "" || allowedOrigins == "" {
-		return fmt.Errorf("main.run: required environment variables are empty (check APP_ENV, SERVER_PORT, HOST_PORT, REDIS_ADDR, ALLOWED_ORIGINS)")
+	if appEnv == "" || port == "" || redisAddr == "" || allowedOrigins == "" {
+		return fmt.Errorf("main.run: required environment variables are empty (check APP_ENV, SERVER_PORT, REDIS_ADDR, ALLOWED_ORIGINS)")
 	}
 
 	redisClient, err := infra.NewRedisClient(redisAddr, redisPswd)
